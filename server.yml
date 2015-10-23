@@ -1,0 +1,91 @@
+---
+data:
+  image: busybox
+  volumes:
+    - /var/lib/mysql
+    - /tmp
+    - /var/lib/sota
+  restart: no
+  command: "true"
+
+mysql:
+  image: advancedtelematic/mariadb
+  ports:
+    - 3306:3306
+  expose:
+    - 3306
+  environment:
+    MYSQL_ROOT_PASSWORD: "sota-test"
+    MYSQL_USER: "sota"
+    MYSQL_PASSWORD: "s0ta"
+    MYSQL_DATABASES: "sota_core sota_resolver"
+  restart: always
+  volumes_from:
+    - data
+
+rvi:
+  image: advancedtelematic/rvi
+  ports:
+    - 8801:8801
+    - 8807:8807
+  restart: always
+  stdin_open: true
+  tty: true
+  command: server
+
+resolver:
+  image: advancedtelematic/sota-resolver:dev
+  ports:
+    - 8081:8081
+  expose:
+    - 8081
+  links:
+    - mysql:mysql
+  environment:
+    HOST: 0.0.0.0
+    RESOLVER_DB_URL: "jdbc:mariadb://mysql:3306/sota_resolver"
+  restart: always
+
+core:
+  image: advancedtelematic/sota-core:dev
+  ports:
+    - 8080:8080
+  expose:
+    - 8080
+  links:
+    - mysql:mysql
+    - resolver:resolver
+    - rvi:rvi
+  environment:
+    HOST: 0.0.0.0
+    CORE_DB_URL: "jdbc:mariadb://mysql:3306/sota_core"
+    RESOLVER_API_URI: "http://resolver:8081"
+    RVI_URI: "http://rvi:8801"
+  volumes_from:
+    - data
+  restart: always
+
+webserver:
+  image: advancedtelematic/sota-webserver:dev
+  links:
+    - resolver:resolver
+  ports:
+    - 80:9000
+  expose:
+    - 9000
+  environment:
+    CORE_API_URI: "http://core:8080"
+    RESOLVER_API_URI: "http://resolver:8081"
+    PLAY_CRYPTO_SECRET: "YM5B6o<ywKn4tTyA;tOZ<2xUEajF4DDi=O/PPm1Q^w2LqtKISd9oqYT6b>>C1gQa"
+  restart: always
+
+migration:
+  image: advancedtelematic/sota-migration
+  links:
+    - mysql:mysql
+  environment:
+    CORE_DB_URL: "jdbc:mariadb://mysql:3306/sota_core"
+    RESOLVER_DB_URL: "jdbc:mariadb://mysql:3306/sota_resolver"
+  restart: no
+  command: bash -c "sleep 20 && sbt flywayMigrate"
+

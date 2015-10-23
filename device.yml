@@ -1,0 +1,25 @@
+---
+rvi:
+  image: advancedtelematic/rvi
+  restart: always
+  stdin_open: true
+  tty: true
+  expose:
+    - 8901
+  ports:
+    - 8901:8901
+  external_links:
+    - sotaserver_rvi_1:server_rvi
+  command: client
+  environment:
+    RVI_BACKEND: "server_rvi"
+
+client:
+  image: advancedtelematic/sota-client-debug
+  links:
+    - rvi:rvi
+  expose:
+    - 9080
+  environment:
+    RVI: "http://rvi:8901"
+    SOTA_CLIENT_ADDR: "sotadevice_client_1"
