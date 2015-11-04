@@ -69,6 +69,7 @@ webserver:
   image: advancedtelematic/sota-webserver:dev
   links:
     - resolver:resolver
+    - core:core
   ports:
     - 80:9000
   expose:
