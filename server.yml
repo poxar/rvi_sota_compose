@@ -34,7 +34,7 @@ rvi:
   command: server
 
 resolver:
-  image: advancedtelematic/sota-resolver:dev
+  image: advancedtelematic/sota-resolver
   ports:
     - 8081:8081
   expose:
@@ -47,7 +47,7 @@ resolver:
   restart: always
 
 core:
-  image: advancedtelematic/sota-core:dev
+  image: advancedtelematic/sota-core
   ports:
     - 8080:8080
   expose:
@@ -66,7 +66,7 @@ core:
   restart: always
 
 webserver:
-  image: advancedtelematic/sota-webserver:dev
+  image: advancedtelematic/sota-webserver
   links:
     - resolver:resolver
     - core:core
